@@ -1,0 +1,5 @@
+langchain-core>=0.1.0
+requests>=2.20.0
+
+[dev]
+pytest>=7.0

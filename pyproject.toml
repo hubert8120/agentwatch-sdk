@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "useagentwatch"
+version = "0.1.0"
+description = "AI agent observability SDK for agencies"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "AgentWatch" }]
+keywords = ["langchain", "observability", "llm", "agents", "monitoring"]
+dependencies = [
+    "langchain-core>=0.1.0",
+    "requests>=2.20.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://agentwatch-two.vercel.app"
+
+[tool.setuptools.packages.find]
+include = ["agentwatch*"]
