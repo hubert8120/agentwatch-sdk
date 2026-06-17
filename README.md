@@ -108,7 +108,7 @@ Call `aw.flush()` before your process exits to ensure queued events are sent (re
 
 AgentWatch is part of a reliability stack for production AI agents:
 
-- **[FiGuard](https://github.com/slingala/figuard-core)** — budget enforcement before tool calls (FiGuard enforces → AgentWatch observes)
+- **[FiGuard](https://github.com/figuard/figuard-core)** — budget enforcement before tool calls (FiGuard enforces → AgentWatch observes)
 - **AgentWatch** — observability, cost tracking, session reports
 - **Armorer** — recovery decisions after failures
 
