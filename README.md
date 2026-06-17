@@ -1,53 +1,57 @@
 # AgentWatch
 
-Drop-in observability for [LangChain](https://www.langchain.com/) agents. Wrap
-your agent once and AgentWatch automatically tracks sessions, LLM calls, tool
-calls, costs, and outcomes — without slowing down or breaking your agent.
+**The reliability layer for AI agents.**
 
-## Installation
+Drop-in observability for [LangChain](https://www.langchain.com/) agents built for agencies and software houses that deploy AI agents for B2B clients.
+
+Wrap your agent once — AgentWatch automatically tracks sessions, LLM calls, tool calls, costs, and outcomes. No code changes to your agent logic.
 
 ```bash
-pip install -e .
+pip install useagentwatch
 ```
+
+---
+
+## Why AgentWatch
+
+Most production AI agents are flying blind. You get a monthly bill from OpenAI but no answer to:
+
+- Which client's agent caused that $800 spike?
+- Why did 30% of sessions return garbage last Tuesday?
+- What did the agent actually do — step by step?
+
+AgentWatch answers all three.
+
+---
 
 ## Quick start
 
 ```python
 import agentwatch
 
-aw = agentwatch.init()                 # 1. initialize
-wrapped_agent = aw.wrap(my_agent)      # 2. wrap your LangChain agent
-wrapped_agent.invoke({"input": "..."}) # 3. use it exactly like before
-```
-
-The wrapped agent is a transparent proxy — `.invoke()`, `.ainvoke()`,
-`.stream()`, `.astream()`, and `.batch()` all work exactly as they did on the
-original agent. Every other attribute is delegated through unchanged.
-
-### Configuration
-
-```python
 aw = agentwatch.init(
-    api_url="https://agentwatch-api.up.railway.app",  # default
-    api_key="optional-key",                            # reserved for future auth
+    api_url="https://agentwatch-api.up.railway.app",
+    api_key="your-api-key"
 )
 
-wrapped = aw.wrap(agent, agent_version="v1", workspace_id="team-a")
+wrapped_agent = aw.wrap(your_langchain_agent)
+wrapped_agent.invoke({"input": "..."})  # use exactly as before
 ```
+
+3 lines. That's it. Every LLM call, tool call, and session outcome is now tracked automatically.
+
+---
 
 ## What gets tracked
 
-When you call `wrap()`, a session is created (`POST /sessions`). As the agent
-runs, each captured event is sent to `POST /events`:
-
 | Event | When | Captured |
-| --- | --- | --- |
+|---|---|---|
 | **Session start** | `wrap()` is called | `session_id`, `agent_version`, `workspace_id`, `model_version` |
 | **LLM call** | each model invocation | model name, input/output tokens, latency, estimated cost |
 | **Tool call** | each tool invocation | tool name, input, output (truncated to 500 chars), latency, success/error |
-| **Session outcome** | the agent finishes | success or error |
+| **Session outcome** | agent finishes | success or error |
 
-Each event has this schema:
+### Event schema
 
 ```json
 {
@@ -64,29 +68,82 @@ Each event has this schema:
 
 ### Cost estimation
 
-Costs are computed from token counts using a built-in pricing table
-(`agentwatch/pricing.py`) covering `gpt-4o`, `gpt-4o-mini`, `gpt-3.5-turbo`,
-`claude-3-5-sonnet`, and `claude-3-5-haiku`. Versioned names (e.g.
-`claude-3-5-sonnet-20241022`) resolve automatically. If the model is unknown or
-token counts are unavailable, `cost_usd` is `null`.
+Built-in pricing table covers `gpt-4o`, `gpt-4o-mini`, `gpt-3.5-turbo`, `claude-3-5-sonnet`, and `claude-3-5-haiku`. Versioned names (e.g. `claude-3-5-sonnet-20241022`) resolve automatically. Unknown models return `cost_usd: null`.
+
+---
+
+## Configuration
+
+```python
+aw = agentwatch.init(
+    api_url="https://agentwatch-api.up.railway.app",
+    api_key="your-api-key",
+)
+
+wrapped = aw.wrap(
+    agent,
+    agent_version="v1",
+    workspace_id="client-acme"  # per-client attribution
+)
+```
+
+The wrapped agent is a transparent proxy — `.invoke()`, `.ainvoke()`, `.stream()`, `.astream()`, and `.batch()` all work exactly as before. Every other attribute is delegated through unchanged.
+
+---
 
 ## Non-blocking by design
 
-All HTTP calls run on a background worker thread fed by an in-memory queue.
-AgentWatch never blocks your agent and never raises into it — failures are
-caught and logged as warnings (enable with `logging.getLogger("agentwatch")`).
+All HTTP calls run on a background worker thread fed by an in-memory queue. AgentWatch never blocks your agent and never raises into it — failures are caught and logged as warnings.
 
-Call `aw.flush()` before your process exits to ensure queued events are sent
-(this is also registered automatically via `atexit`).
+```python
+import logging
+logging.getLogger("agentwatch").setLevel(logging.WARNING)
+```
+
+Call `aw.flush()` before your process exits to ensure queued events are sent (registered automatically via `atexit`).
+
+---
+
+## Ecosystem
+
+AgentWatch is part of a reliability stack for production AI agents:
+
+- **[FiGuard](https://github.com/slingala/figuard-core)** — budget enforcement before tool calls (FiGuard enforces → AgentWatch observes)
+- **AgentWatch** — observability, cost tracking, session reports
+- **Armorer** — recovery decisions after failures
+
+---
+
+## API
+
+AgentWatch SDK talks to the AgentWatch API:
+
+- `POST /sessions` — create a session
+- `POST /events` — send an event
+- `GET /report/{session_id}` — get a session report
+
+API docs: [agentwatch-api.up.railway.app/docs](https://agentwatch-api.up.railway.app/docs)
+
+---
 
 ## Development
 
 ```bash
+git clone https://github.com/hubert8120/agentwatch-sdk.git
+cd agentwatch-sdk
 pip install -e ".[dev]"
 pytest
 ```
 
-## Dashboard
+---
 
-View your sessions and events at the AgentWatch dashboard:
-**https://agentwatch-api.up.railway.app** _(placeholder)_.
+## Links
+
+- **Landing page:** [agentwatch-two.vercel.app](https://agentwatch-two.vercel.app)
+- **PyPI:** [pypi.org/project/useagentwatch](https://pypi.org/project/useagentwatch)
+- **API docs:** [agentwatch-api.up.railway.app/docs](https://agentwatch-api.up.railway.app/docs)
+- **Early access:** [agentwatch-two.vercel.app](https://agentwatch-two.vercel.app)
+
+---
+
+*Built for agencies that deploy AI agents for clients — not for internal dev teams.*
